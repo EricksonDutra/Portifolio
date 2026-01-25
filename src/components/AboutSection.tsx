@@ -1,5 +1,8 @@
 import { motion } from "framer-motion";
 import { Code2, Database, Globe, Layers } from "lucide-react";
+import { useEffect, useState } from "react";
+
+const GITHUB_USERNAME = "EricksonDutra"
 
 const stats = [
   { label: "Anos de Experiência", value: "5+" },
@@ -16,6 +19,19 @@ const highlights = [
 ];
 
 const AboutSection = () => {
+  const [avatarUrl, setAvatarUrl] = useState("")
+
+  useEffect(()=>{
+    fetch(`https://api.github.com/users/${GITHUB_USERNAME}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.avatar_url) {
+          setAvatarUrl(data.avatar_url);
+        }
+      })
+      .catch((err) => console.error("Erro ao buscar foto do GitHub:", err));
+  }, [])
+
   return (
     <section id="about" className="py-24 relative">
       <div className="container px-6">
@@ -29,28 +45,48 @@ const AboutSection = () => {
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Sobre <span className="gradient-text">Mim</span>
           </h2>
+
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Desenvolvedor apaixonado por criar soluções que fazem a diferença
           </p>
         </motion.div>
 
         <div className="grid lg:grid-cols-2 gap-16 items-center">
-          {/* Text Content */}
+          {/* Coluna Esquerda: Foto + Texto + Stats */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
+            {/* Foto do GitHub */}
+            {avatarUrl && (
+              <motion.div 
+                initial={{ scale: 0.5, opacity: 0 }}
+                whileInView={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5 }}
+                className="mb-8 flex justify-start"
+              >
+                <div className="relative">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-primary to-accent rounded-full blur opacity-30 animate-pulse"></div>
+                  <img 
+                    src={avatarUrl} 
+                    alt={`Foto de perfil de ${GITHUB_USERNAME}`}
+                    className="relative w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-background object-cover shadow-xl"
+                  />
+                </div>
+              </motion.div>
+            )}
+
             <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
-              Com mais de 5 anos de experiência em desenvolvimento de software, 
-              tenho me dedicado a criar aplicações web e mobile que combinam 
-              <span className="text-primary font-medium"> excelência técnica</span> com 
+              Com mais de 5 anos de experiência em desenvolvimento de software,
+              tenho me dedicado a criar aplicações web e mobile que combinam
+              <span className="text-primary font-medium"> excelência técnica</span> com
               <span className="text-accent font-medium"> experiência de usuário excepcional</span>.
             </p>
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-              Minha jornada começou com curiosidade e evoluiu para uma carreira 
-              focada em resolver problemas complexos através de código limpo e 
+              Minha jornada começou com curiosidade e evoluiu para uma carreira
+              focada em resolver problemas complexos através de código limpo e
               arquitetura bem planejada.
             </p>
 
@@ -68,13 +104,15 @@ const AboutSection = () => {
                   <div className="text-2xl md:text-3xl font-bold gradient-text mb-1">
                     {stat.value}
                   </div>
-                  <div className="text-xs text-muted-foreground">{stat.label}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {stat.label}
+                  </div>
                 </motion.div>
               ))}
             </div>
           </motion.div>
 
-          {/* Skill Highlights */}
+          {/* Skill Highlights (Mantido igual) */}
           <motion.div
             initial={{ opacity: 0, x: 30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -96,7 +134,9 @@ const AboutSection = () => {
                   <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 group-hover:glow-primary transition-shadow">
                     <item.icon className="w-6 h-6 text-primary" />
                   </div>
-                  <h3 className="font-semibold text-foreground mb-1">{item.title}</h3>
+                  <h3 className="font-semibold text-foreground mb-1">
+                    {item.title}
+                  </h3>
                   <p className="text-sm text-muted-foreground">{item.desc}</p>
                 </div>
               </motion.div>

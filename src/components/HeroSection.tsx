@@ -78,7 +78,13 @@ const HeroSection = () => {
             transition={{ delay: 0.6 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
           >
-            <Button size="lg" className="glow-primary px-8">
+            <Button 
+              size="lg" 
+              className="glow-primary px-8"
+              onClick={() => {
+                document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
               Ver Projetos
             </Button>
             <Button variant="outline" size="lg" className="px-8">

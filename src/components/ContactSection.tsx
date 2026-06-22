@@ -1,12 +1,13 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, MapPin, Phone, Send, Github, Linkedin, Twitter, Instagram } from "lucide-react";
+import { Mail, MapPin, Phone, Send, Github, Linkedin, Instagram, Loader2, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 const contactInfo = [
   { icon: Mail, label: "Email", value: "ericksond10@gmail.com", href: "mailto:ericksond10@gmail.com" },
-  { icon: Phone, label: "Telefone", value: "+55 (67) 99200-9689", href: "tel:+5567992009689" },
+  { icon: Phone, label: "Telefone", value: "+55 (67) 99200-9689", href: "https://wa.me/5567992009689" },
   { icon: MapPin, label: "Localização", value: "Ponta Porã - MS, Brasil", href: null },
 ];
 
@@ -17,6 +18,53 @@ const socialLinks = [
 ];
 
 const ContactSection = () => {
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
+  const [assunto, setAssunto] = useState("");
+  const [mensagem, setMensagem] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      const response = await fetch("https://formsubmit.co/ajax/ericksond10@gmail.com", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          Nome: nome,
+          Email: email,
+          Assunto: assunto,
+          Mensagem: mensagem,
+          _subject: `Novo contato de ${nome} via Portfólio: ${assunto}`,
+          _template: "box"
+        })
+      });
+
+      if (response.ok) {
+        setIsSuccess(true);
+        setNome("");
+        setEmail("");
+        setAssunto("");
+        setMensagem("");
+        
+        // Remove a mensagem de sucesso após 5 segundos
+        setTimeout(() => setIsSuccess(false), 5000);
+      } else {
+        throw new Error("Erro ao enviar mensagem.");
+      }
+    } catch (error) {
+      alert("Ocorreu um erro ao tentar enviar sua mensagem. Por favor, tente novamente mais tarde.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <section id="contact" className="py-24">
       <div className="container px-6">
@@ -54,7 +102,7 @@ const ContactSection = () => {
                   <div>
                     <p className="text-sm text-muted-foreground">{info.label}</p>
                     {info.href ? (
-                      <a href={info.href} className="font-medium hover:text-primary transition-colors">
+                      <a href={info.href} target={info.label === "Telefone" ? "_blank" : "_self"} rel={info.label === "Telefone" ? "noopener noreferrer" : undefined} className="font-medium hover:text-primary transition-colors">
                         {info.value}
                       </a>
                     ) : (
@@ -91,35 +139,72 @@ const ContactSection = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <form className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm text-muted-foreground mb-2 block">Nome</label>
-                  <Input placeholder="Seu nome" className="bg-secondary border-border" />
+                  <Input 
+                    placeholder="Seu nome" 
+                    required
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                    disabled={isSubmitting}
+                    className="bg-secondary border-border" 
+                  />
                 </div>
                 <div>
                   <label className="text-sm text-muted-foreground mb-2 block">Email</label>
-                  <Input type="email" placeholder="seu@email.com" className="bg-secondary border-border" />
+                  <Input 
+                    type="email" 
+                    placeholder="seu@email.com" 
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isSubmitting}
+                    className="bg-secondary border-border" 
+                  />
                 </div>
               </div>
               
               <div>
                 <label className="text-sm text-muted-foreground mb-2 block">Assunto</label>
-                <Input placeholder="Qual o assunto?" className="bg-secondary border-border" />
+                <Input 
+                  placeholder="Qual o assunto?" 
+                  required
+                  value={assunto}
+                  onChange={(e) => setAssunto(e.target.value)}
+                  disabled={isSubmitting}
+                  className="bg-secondary border-border" 
+                />
               </div>
               
               <div>
                 <label className="text-sm text-muted-foreground mb-2 block">Mensagem</label>
                 <Textarea 
                   placeholder="Escreva sua mensagem..." 
+                  required
+                  value={mensagem}
+                  onChange={(e) => setMensagem(e.target.value)}
+                  disabled={isSubmitting}
                   rows={5}
                   className="bg-secondary border-border resize-none"
                 />
               </div>
 
-              <Button size="lg" className="w-full glow-primary">
-                <Send className="w-4 h-4 mr-2" />
-                Enviar Mensagem
+              <Button 
+                type="submit" 
+                size="lg" 
+                disabled={isSubmitting || isSuccess} 
+                className={`w-full transition-all duration-300 ${isSuccess ? 'bg-green-600 hover:bg-green-700 text-white' : 'glow-primary'}`}
+              >
+                {isSubmitting ? (
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                ) : isSuccess ? (
+                  <CheckCircle2 className="w-5 h-5 mr-2" />
+                ) : (
+                  <Send className="w-5 h-5 mr-2" />
+                )}
+                {isSubmitting ? "Enviando..." : isSuccess ? "Mensagem Enviada!" : "Enviar Mensagem"}
               </Button>
             </form>
           </motion.div>

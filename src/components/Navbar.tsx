@@ -8,7 +8,6 @@ const navLinks = [
   { label: "Habilidades", href: "#skills" },
   { label: "Projetos", href: "#projects" },
   { label: "Experiência", href: "#experience" },
-  { label: "Contato", href: "#contact" },
 ];
 
 const Navbar = () => {
@@ -48,8 +47,8 @@ const Navbar = () => {
               {link.label}
             </a>
           ))}
-          <Button size="sm" className="glow-primary">
-            Contato
+          <Button size="sm" className="glow-primary" asChild>
+            <a href="#contact">Contato</a>
           </Button>
         </nav>
 
@@ -82,8 +81,8 @@ const Navbar = () => {
                   {link.label}
                 </a>
               ))}
-              <Button className="mt-4 glow-primary">
-                Contato
+              <Button className="mt-4 glow-primary" asChild onClick={() => setIsMobileMenuOpen(false)}>
+                <a href="#contact">Contato</a>
               </Button>
             </div>
           </motion.nav>

@@ -28,11 +28,11 @@ const ContactSection = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
       const response = await fetch("https://formsubmit.co/ajax/ericksond10@gmail.com", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
@@ -52,7 +52,7 @@ const ContactSection = () => {
         setEmail("");
         setAssunto("");
         setMensagem("");
-        
+
         // Remove a mensagem de sucesso após 5 segundos
         setTimeout(() => setIsSuccess(false), 5000);
       } else {
@@ -92,7 +92,7 @@ const ContactSection = () => {
             transition={{ duration: 0.6 }}
           >
             <h3 className="text-xl font-semibold mb-6">Informações de Contato</h3>
-            
+
             <div className="space-y-6 mb-8">
               {contactInfo.map((info) => (
                 <div key={info.label} className="flex items-center gap-4">
@@ -143,45 +143,45 @@ const ContactSection = () => {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm text-muted-foreground mb-2 block">Nome</label>
-                  <Input 
-                    placeholder="Seu nome" 
+                  <Input
+                    placeholder="Seu nome"
                     required
                     value={nome}
                     onChange={(e) => setNome(e.target.value)}
                     disabled={isSubmitting}
-                    className="bg-secondary border-border" 
+                    className="bg-secondary border-border"
                   />
                 </div>
                 <div>
                   <label className="text-sm text-muted-foreground mb-2 block">Email</label>
-                  <Input 
-                    type="email" 
-                    placeholder="seu@email.com" 
+                  <Input
+                    type="email"
+                    placeholder="seu@email.com"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={isSubmitting}
-                    className="bg-secondary border-border" 
+                    className="bg-secondary border-border"
                   />
                 </div>
               </div>
-              
+
               <div>
                 <label className="text-sm text-muted-foreground mb-2 block">Assunto</label>
-                <Input 
-                  placeholder="Qual o assunto?" 
+                <Input
+                  placeholder="Qual o assunto?"
                   required
                   value={assunto}
                   onChange={(e) => setAssunto(e.target.value)}
                   disabled={isSubmitting}
-                  className="bg-secondary border-border" 
+                  className="bg-secondary border-border"
                 />
               </div>
-              
+
               <div>
                 <label className="text-sm text-muted-foreground mb-2 block">Mensagem</label>
-                <Textarea 
-                  placeholder="Escreva sua mensagem..." 
+                <Textarea
+                  placeholder="Escreva sua mensagem..."
                   required
                   value={mensagem}
                   onChange={(e) => setMensagem(e.target.value)}
@@ -191,10 +191,10 @@ const ContactSection = () => {
                 />
               </div>
 
-              <Button 
-                type="submit" 
-                size="lg" 
-                disabled={isSubmitting || isSuccess} 
+              <Button
+                type="submit"
+                size="lg"
+                disabled={isSubmitting || isSuccess}
                 className={`w-full transition-all duration-300 ${isSuccess ? 'bg-green-600 hover:bg-green-700 text-white' : 'glow-primary'}`}
               >
                 {isSubmitting ? (

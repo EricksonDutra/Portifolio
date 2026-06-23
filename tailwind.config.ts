@@ -7,6 +7,9 @@ const config: Config = {
     "./src/**/*.{ts,tsx,js,jsx}",
   ],
   theme: {
+    container: {
+      center: true,
+    },
     extend: {
       colors: {
         /* Base */

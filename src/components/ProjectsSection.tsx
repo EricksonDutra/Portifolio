@@ -1,7 +1,17 @@
-import { motion } from "framer-motion";
-import { ExternalLink, Github, Folder, Loader2, Info } from "lucide-react";
+import { useState, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Github, Loader2, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
+import ProjectCard from "@/components/ProjectCard";
+import {
+  projectsEnrichment,
+  DEFAULT_CATEGORY,
+  CATEGORY_CONFIG,
+  type ProjectCategory,
+  type ProjectMedia,
+} from "@/data/projectsEnrichment";
 
 interface GitHubRepo {
   id: number;
@@ -16,12 +26,13 @@ interface GitHubRepo {
 
 const GITHUB_USERNAME = "EricksonDutra";
 
-// 📌 Adicione aqui os nomes exatos dos repositórios que você quer destacar (seus pinned repos)
 const PINNED_REPOS = [
   "sggm_mobile",
   "Site-Agro-Company",
   "AproveRevalida",
   "Portifolio",
+  "TVSENACPP",
+  "VCOS",
 ];
 
 const fetchPinnedRepos = async (): Promise<GitHubRepo[]> => {
@@ -29,36 +40,96 @@ const fetchPinnedRepos = async (): Promise<GitHubRepo[]> => {
 
   const promises = PINNED_REPOS.map(async (repoName) => {
     const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${repoName}`);
+    if (response.status === 403) {
+      throw new Error("Limite de requisições da API do GitHub atingido. Aguarde alguns minutos.");
+    }
     if (!response.ok) {
-      console.warn(`Repositório não encontrado ou erro na API: ${repoName}`);
+      console.warn(`Repositório não encontrado ou erro na API: ${repoName} (${response.status})`);
       return null;
     }
     return response.json();
   });
 
   const results = await Promise.all(promises);
-  // Retorna apenas os que deram sucesso (não nulos)
   return results.filter((repo): repo is GitHubRepo => repo !== null);
 };
 
+type FilterValue = "all" | ProjectCategory;
+
+const FILTER_OPTIONS: { value: FilterValue; label: string; icon: string }[] = [
+  { value: "all", label: "Todos", icon: "🔥" },
+  { value: "web", label: CATEGORY_CONFIG.web.label, icon: CATEGORY_CONFIG.web.icon },
+  { value: "mobile", label: CATEGORY_CONFIG.mobile.label, icon: CATEGORY_CONFIG.mobile.icon },
+  { value: "backend", label: CATEGORY_CONFIG.backend.label, icon: CATEGORY_CONFIG.backend.icon },
+];
+
+interface EnrichedProject {
+  id: number;
+  title: string;
+  description: string;
+  tags: string[];
+  github: string;
+  demo: string | null;
+  featured: boolean;
+  category: ProjectCategory;
+  media: ProjectMedia[];
+  thumbnail?: string;
+}
+
 const ProjectsSection = () => {
+  const [activeFilter, setActiveFilter] = useState<FilterValue>("all");
+
   const { data: repos, isLoading, isError } = useQuery({
     queryKey: ['github-pinned-repos'],
     queryFn: fetchPinnedRepos,
+    staleTime: 10 * 60 * 1000, // 10 minutos — evita chamadas desnecessárias à API
+    retry: 1,
+    retryDelay: 5000,
   });
 
-  const projects = repos?.map((repo, index) => ({
-    title: repo.name.replace(/-/g, ' ').replace(/_/g, ' '),
-    description: repo.description || "Sem descrição disponível. Visite o repositório para mais detalhes.",
-    tags: Array.from(new Set([repo.language, ...repo.topics].filter(Boolean))) as string[],
-    github: repo.html_url,
-    demo: repo.homepage && repo.homepage !== "" ? repo.homepage : null,
-    featured: index < 2, // Os dois primeiros da sua lista ficarão em destaque
-  })) || [];
+  // Merge GitHub data with local enrichment
+  const projects: EnrichedProject[] = useMemo(() => {
+    if (!repos) return [];
+
+    return repos.map((repo, index) => {
+      const enrichment = projectsEnrichment[repo.name];
+
+      return {
+        id: repo.id,
+        title: repo.name.replace(/-/g, ' ').replace(/_/g, ' '),
+        description: repo.description || "Sem descrição disponível. Visite o repositório para mais detalhes.",
+        tags: Array.from(new Set([repo.language, ...repo.topics].filter(Boolean))) as string[],
+        github: repo.html_url,
+        demo: repo.homepage && repo.homepage !== "" ? repo.homepage : null,
+        featured: index < 2,
+        category: enrichment?.category || DEFAULT_CATEGORY,
+        media: enrichment?.media || [],
+        thumbnail: enrichment?.thumbnail,
+      };
+    });
+  }, [repos]);
+
+  // Filter projects by category
+  const filteredProjects = useMemo(() => {
+    if (activeFilter === "all") return projects;
+    return projects.filter((p) => p.category === activeFilter);
+  }, [projects, activeFilter]);
+
+  // Check which categories have projects
+  const availableCategories = useMemo(() => {
+    const categories = new Set(projects.map((p) => p.category));
+    return FILTER_OPTIONS.filter(
+      (opt) => opt.value === "all" || categories.has(opt.value as ProjectCategory)
+    );
+  }, [projects]);
+
+  const featuredProjects = filteredProjects.filter((p) => p.featured);
+  const otherProjects = filteredProjects.filter((p) => !p.featured);
 
   return (
     <section id="projects" className="py-24 relative">
       <div className="container px-6 relative z-10">
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -69,11 +140,34 @@ const ProjectsSection = () => {
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Meus <span className="gradient-text">Projetos</span>
           </h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
             Uma seleção dos meus projetos fixados no GitHub.
           </p>
+
+          {/* Filter tabs */}
+          {projects.length > 0 && availableCategories.length > 2 && (
+            <Tabs
+              value={activeFilter}
+              onValueChange={(v) => setActiveFilter(v as FilterValue)}
+              className="inline-flex"
+            >
+              <TabsList className="project-filter-tabs h-auto">
+                {availableCategories.map((filter) => (
+                  <TabsTrigger
+                    key={filter.value}
+                    value={filter.value}
+                    className="project-filter-tab"
+                  >
+                    <span className="mr-1.5">{filter.icon}</span>
+                    {filter.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
+          )}
         </motion.div>
 
+        {/* Content */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Loader2 className="w-10 h-10 animate-spin mb-4 text-primary" />
@@ -91,113 +185,70 @@ const ProjectsSection = () => {
               Adicione os nomes dos seus repositórios na constante <code className="bg-muted px-1.5 py-0.5 rounded text-sm">PINNED_REPOS</code> no arquivo <code className="bg-muted px-1.5 py-0.5 rounded text-sm">ProjectsSection.tsx</code>.
             </p>
           </div>
+        ) : filteredProjects.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-16 text-muted-foreground"
+          >
+            <p className="text-lg">Nenhum projeto nesta categoria ainda.</p>
+            <button
+              onClick={() => setActiveFilter("all")}
+              className="mt-3 text-primary hover:underline text-sm"
+            >
+              Ver todos os projetos
+            </button>
+          </motion.div>
         ) : (
-          <>
-            {/* Featured Projects */}
-            {projects.filter(p => p.featured).length > 0 && (
-              <div className="grid lg:grid-cols-2 gap-6 mb-12">
-                {projects.filter(p => p.featured).map((project, index) => (
-                  <motion.div
-                    key={project.title}
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1 }}
-                    whileHover={{ y: -5 }}
-                    className="group relative p-8 rounded-xl gradient-border overflow-hidden bg-card/50 backdrop-blur-sm"
-                  >
-                    <div className="relative z-10 h-full flex flex-col">
-                      <div className="flex items-center justify-between mb-4">
-                        <Folder className="w-10 h-10 text-primary" />
-                        <div className="flex gap-3">
-                          {project.github && (
-                            <a href={project.github} target="_blank" rel="noopener noreferrer"
-                              className="text-muted-foreground hover:text-primary transition-colors">
-                              <Github className="w-5 h-5" />
-                            </a>
-                          )}
-                          {project.demo && (
-                            <a href={project.demo} target="_blank" rel="noopener noreferrer"
-                              className="text-muted-foreground hover:text-primary transition-colors">
-                              <ExternalLink className="w-5 h-5" />
-                            </a>
-                          )}
-                        </div>
-                      </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeFilter}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              {/* Featured Projects */}
+              {featuredProjects.length > 0 && (
+                <div className="grid lg:grid-cols-2 gap-6 mb-12">
+                  {featuredProjects.map((project) => (
+                    <ProjectCard
+                      key={project.id}
+                      title={project.title}
+                      description={project.description}
+                      tags={project.tags}
+                      github={project.github}
+                      demo={project.demo}
+                      featured={true}
+                      category={project.category}
+                      media={project.media}
+                      thumbnail={project.thumbnail}
+                    />
+                  ))}
+                </div>
+              )}
 
-                      <h3 className="text-xl font-semibold mb-3 group-hover:text-primary transition-colors capitalize">
-                        {project.title}
-                      </h3>
-                      <p className="text-muted-foreground mb-6 leading-relaxed line-clamp-3">
-                        {project.description}
-                      </p>
-
-                      <div className="flex flex-wrap gap-2 mt-auto">
-                        {project.tags.slice(0, 4).map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-3 py-1 text-xs font-mono bg-secondary/50 text-primary border border-primary/20 rounded-full"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-
-            {/* Other Projects Grid */}
-            {projects.filter(p => !p.featured).length > 0 && (
-              <div className="grid md:grid-cols-3 gap-6">
-                {projects.filter(p => !p.featured).map((project, index) => (
-                  <motion.div
-                    key={project.title}
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: index * 0.1 }}
-                    whileHover={{ y: -5 }}
-                    className="group p-6 rounded-xl bg-card/40 border border-border/50 hover:border-primary/50 transition-colors flex flex-col h-full backdrop-blur-sm"
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <Folder className="w-8 h-8 text-primary" />
-                      <div className="flex gap-3">
-                        {project.github && (
-                          <a href={project.github} target="_blank" rel="noopener noreferrer"
-                            className="text-muted-foreground hover:text-primary transition-colors">
-                            <Github className="w-4 h-4" />
-                          </a>
-                        )}
-                        {project.demo && (
-                          <a href={project.demo} target="_blank" rel="noopener noreferrer"
-                            className="text-muted-foreground hover:text-primary transition-colors">
-                            <ExternalLink className="w-4 h-4" />
-                          </a>
-                        )}
-                      </div>
-                    </div>
-
-                    <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors capitalize line-clamp-1">
-                      {project.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-4 line-clamp-3 flex-grow">
-                      {project.description}
-                    </p>
-
-                    <div className="flex flex-wrap gap-2 mt-auto">
-                      {project.tags.slice(0, 3).map((tag) => (
-                        <span key={tag} className="text-[10px] font-mono text-muted-foreground border border-border/50 px-2 py-0.5 rounded-full">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </>
+              {/* Other Projects Grid */}
+              {otherProjects.length > 0 && (
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {otherProjects.map((project) => (
+                    <ProjectCard
+                      key={project.id}
+                      title={project.title}
+                      description={project.description}
+                      tags={project.tags}
+                      github={project.github}
+                      demo={project.demo}
+                      featured={false}
+                      category={project.category}
+                      media={project.media}
+                      thumbnail={project.thumbnail}
+                    />
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
         )}
 
         {/* View More Button */}

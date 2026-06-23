@@ -7,7 +7,7 @@ const experiences = [
     title: "Desenvolvedor Fullstack",
     company: "Ciarama Máquinas",
     period: "2023 - atualmente",
-    description: "Desenvolvimento de features com Flutter, integração de APIs e otimização de performance.",
+    description: "Desenvolvimento de features com Flutter para aplicações mobile, integração de APIs em JAVA e Python, otimização de performance, além de operações em banco de dados SQL Server.",
   },
   {
     type: "work",
@@ -18,10 +18,10 @@ const experiences = [
   },
   {
     type: "work",
-    title: "Docente em tecnologia",
+    title: "Docente em Tecnologia da Informação",
     company: "Senac MS",
     period: "2024 - atualmente",
-    description: "Ministração de aulas no curso técnico em desenvolvimento de sistemas.",
+    description: "Ministração de aulas: Curso Técnico em Desenvolvimento de Sistemas (Engenharia de Software, Algoritmos, Banco de Dados, Back-end, Front-end e Desenvolvimento de Aplicações Web e Mobile) e Curso de Informática Básica (Windows e Office).",
   },
 ];
 
@@ -43,16 +43,28 @@ const education = [
     institution: "Falculdades Anhanguera",
     period: "2020 - 2022",
     description: "Formação completa com foco em algoritmos, estruturas de dados e engenharia de software.",
-  }
+  },
+  {
+    title: "Pós-Gradução Especialização em Programação WEB",
+    institution: "Senac",
+    period: "2026 - Em andamento",
+    description: "Formação completa na área de tecnologia da informação para criar, desenvolver e manter sites e aplicações web, compreendendo desde os fundamentos de design e desenvolvimento front-end, utilizando HTML, CSS e JavaScript, até técnicas avançadas de programação back-end com linguagens como Python, Ruby ou PHP, além de bancos de dados.",
+  },
+  {
+    title: "Pós-Gradução Especialização em Docência para a EPCT",
+    institution: "IFMS",
+    period: "2026 - Em andamento",
+    description: "Formação específica sobre a Educação Profissional, Científica e Tecnológica para o exercício da profissão de professor.",
+  },
 ];
 
-const TimelineItem = ({ 
-  item, 
-  index, 
-  icon: Icon 
-}: { 
-  item: { title: string; period: string; description: string; company?: string; institution?: string }; 
-  index: number; 
+const TimelineItem = ({
+  item,
+  index,
+  icon: Icon
+}: {
+  item: { title: string; period: string; description: string; company?: string; institution?: string };
+  index: number;
   icon: typeof Briefcase;
 }) => (
   <motion.div
@@ -64,7 +76,7 @@ const TimelineItem = ({
   >
     {/* Timeline line */}
     <div className="absolute left-0 top-0 bottom-0 w-px bg-border" />
-    
+
     {/* Timeline dot */}
     <div className="absolute left-0 top-1 -translate-x-1/2 w-8 h-8 rounded-full bg-primary/10 border-2 border-primary flex items-center justify-center">
       <Icon className="w-4 h-4 text-primary" />
@@ -116,7 +128,7 @@ const ExperienceSection = () => {
               </div>
               <h3 className="text-xl font-semibold">Experiência Profissional</h3>
             </motion.div>
-            
+
             <div className="space-y-0">
               {experiences.map((exp, index) => (
                 <TimelineItem key={exp.title} item={exp} index={index} icon={Briefcase} />
@@ -137,7 +149,7 @@ const ExperienceSection = () => {
               </div>
               <h3 className="text-xl font-semibold">Formação Acadêmica</h3>
             </motion.div>
-            
+
             <div className="space-y-0">
               {education.map((edu, index) => (
                 <TimelineItem key={edu.title} item={edu} index={index} icon={GraduationCap} />
